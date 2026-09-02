@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f4f2ed;
+  --bg-warm: #efece4;
+  --surface: #ffffff;
+  --ink: #121211;
+  --ink-soft: #6a6860;
+  --ink-faint: #9a978e;
+  --line: rgba(18, 18, 17, 0.08);
+  --line-strong: rgba(18, 18, 17, 0.14);
+  --accent: #ff3d2e;
+  --accent-deep: #e22e20;
+  --accent-soft: rgba(255, 61, 46, 0.1);
+  --success: #1f8a5b;
+  --success-soft: rgba(31, 138, 91, 0.1);
+  --warn: #c47a12;
+  --danger: #c43a2b;
+  --shadow: 0 1px 2px rgba(18, 18, 17, 0.04), 0 12px 32px rgba(18, 18, 17, 0.06);
+  --shadow-hover: 0 1px 2px rgba(18, 18, 17, 0.05), 0 18px 40px rgba(18, 18, 17, 0.1);
+  --radius: 22px;
+  --radius-sm: 14px;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-warm: var(--bg-warm);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-success: var(--success);
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+}
+
+* {
+  border-color: var(--line);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  min-height: 100%;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-image:
+    radial-gradient(1200px 500px at 50% -120px, rgba(255, 61, 46, 0.07), transparent 55%),
+    radial-gradient(800px 400px at 100% 0%, rgba(18, 18, 17, 0.03), transparent 50%);
+}
+
+::selection {
+  background: var(--accent);
+  color: white;
+}
+
+.serif-italic {
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-style: italic;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.input-focus {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--accent-soft);
+  border-color: rgba(255, 61, 46, 0.35);
+}
+
+@keyframes pulse-bar {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes split-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise {
+  animation: rise 0.5s ease both;
+}
+
+.grain {
+  position: relative;
+}
+
+.grain::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.sticky-cta {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+}
