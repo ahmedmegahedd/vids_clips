@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
 import { AuthModule } from "./auth/auth.module";
+import { AdminModule } from "./admin/admin.module";
 import { VideosModule } from "./videos/videos.module";
 import { ProjectsModule } from "./projects/projects.module";
 import { HealthModule } from "./health/health.module";
@@ -18,6 +19,7 @@ import { SupabaseModule } from "./supabase/supabase.module";
     }),
     SupabaseModule,
     AuthModule,
+    AdminModule,
     VideosModule,
     ProjectsModule,
     ProcessingModule,

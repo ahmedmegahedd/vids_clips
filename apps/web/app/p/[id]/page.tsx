@@ -5,7 +5,7 @@ import { Logo } from "@/components/brand/Logo";
 import { WorkflowStepper } from "@/components/workflow/WorkflowStepper";
 import { api } from "@/lib/api";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { PROCESSING_STAGE_COPY, formatDuration, type ProjectResponse } from "@clipora/shared";
+import { PROCESSING_STAGE_COPY, PROCESSING_STAGE_HINT, formatDuration, type ProjectResponse } from "@clipora/shared";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -114,7 +114,7 @@ function Processing({ project }: { project: ProjectResponse["project"] }) {
       <div className="mx-auto max-w-2xl px-4 py-14 text-center">
         <p className="text-sm font-semibold text-accent">{PROCESSING_STAGE_COPY[project.stage]}</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight">Creating your clips</h1>
-        <p className="mt-3 text-ink-soft">We&apos;re splitting your video into individual clips.</p>
+        <p className="mt-3 text-ink-soft">{PROCESSING_STAGE_HINT[project.stage]}</p>
 
         <div className="card mt-10 p-6">
           <div className="flex h-16 overflow-hidden rounded-2xl bg-[var(--bg-warm)]">
@@ -135,7 +135,11 @@ function Processing({ project }: { project: ProjectResponse["project"] }) {
               <p className="text-sm text-ink-soft">Processing</p>
             </div>
             <p className="text-sm font-medium text-ink-soft">
-              Clip {project.currentClip} of {project.estimatedClips}
+              {project.currentClip > 0
+                ? `Clip ${project.currentClip} of ${project.estimatedClips}`
+                : project.stage === "preparing"
+                  ? "Downloading"
+                  : "Starting"}
             </p>
           </div>
         </div>
@@ -158,6 +162,16 @@ function Processing({ project }: { project: ProjectResponse["project"] }) {
   );
 }
 
+function startBrowserDownload(url: string, filename: string) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+  document.body.append(link);
+  link.click();
+  link.remove();
+}
+
 function Results({
   project,
   clips,
@@ -167,8 +181,23 @@ function Results({
 }) {
   const [active, setActive] = useState<ProjectResponse["clips"][number] | null>(null);
   const [downloaded, setDownloaded] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const count = clips.length || project.estimatedClips;
+
+  function downloadClip(clip: ProjectResponse["clips"][number]) {
+    startBrowserDownload(
+      api.clipFileUrl(project.id, clip.id, true),
+      `clip-${String(clip.index + 1).padStart(2, "0")}.mp4`,
+    );
+  }
+
+  function downloadAll() {
+    setDownloading(true);
+    startBrowserDownload(api.downloadAllUrl(project.id), "clipora-clips.zip");
+    setDownloaded(true);
+    window.setTimeout(() => setDownloading(false), 1200);
+  }
 
   return (
     <Shell step={4}>
@@ -183,12 +212,10 @@ function Results({
             <Button
               size="lg"
               className="w-full sm:w-auto"
-              onClick={() => {
-                window.location.href = api.downloadAllUrl(project.id);
-                setDownloaded(true);
-              }}
+              disabled={downloading}
+              onClick={() => void downloadAll()}
             >
-              Download All Clips
+              {downloading ? "Preparing download..." : "Download All Clips"}
             </Button>
             <p className="text-xs text-ink-faint">
               {downloaded ? "Your download is starting." : `Download all ${count} clips together.`}
@@ -226,13 +253,7 @@ function Results({
                   <Button size="sm" variant="secondary" onClick={() => setActive(clip)}>
                     Preview
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="dark"
-                    onClick={() => {
-                      if (clip.videoUrl) window.open(clip.videoUrl, "_blank");
-                    }}
-                  >
+                  <Button size="sm" variant="dark" onClick={() => downloadClip(clip)}>
                     Download
                   </Button>
                 </div>
@@ -252,17 +273,14 @@ function Results({
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-6" onClick={() => setActive(null)}>
           <div className="card max-h-[92vh] w-full max-w-lg overflow-auto p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto flex max-w-[280px] items-center justify-center rounded-[32px] bg-ink p-2 shadow-2xl">
-              {active.videoUrl ? (
-                <video src={active.videoUrl} controls className="max-h-[70vh] w-full rounded-[24px]" />
-              ) : (
-                <iframe
-                  title={`Clip ${active.index + 1}`}
-                  className="aspect-[9/16] w-full rounded-[24px]"
-                  src={`https://www.youtube.com/embed/${project.video.youtubeId}?start=${Math.floor(active.startSeconds)}&end=${Math.ceil(active.endSeconds)}`}
-                  allow="autoplay; encrypted-media; fullscreen"
-                  allowFullScreen
-                />
-              )}
+              <video
+                key={active.id}
+                src={api.clipFileUrl(project.id, active.id)}
+                controls
+                playsInline
+                preload="metadata"
+                className="max-h-[70vh] w-full rounded-[24px]"
+              />
             </div>
             <div className="mt-5">
               <p className="text-lg font-semibold">Clip {String(active.index + 1).padStart(2, "0")}</p>
@@ -270,10 +288,7 @@ function Results({
                 {formatDuration(active.startSeconds)} – {formatDuration(active.endSeconds)} · {active.durationSeconds} seconds
               </p>
               <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                <Button
-                  className="flex-1"
-                  onClick={() => active.videoUrl && window.open(active.videoUrl, "_blank")}
-                >
+                <Button className="flex-1" onClick={() => downloadClip(active)}>
                   Download Clip
                 </Button>
                 <Button variant="secondary" className="flex-1" onClick={() => setActive(null)}>

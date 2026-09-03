@@ -4,7 +4,7 @@ import { cx } from "@/lib/cn";
 import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type Variant = "primary" | "secondary" | "ghost" | "dark";
+type Variant = "primary" | "secondary" | "ghost" | "dark" | "danger";
 type Size = "md" | "lg" | "sm";
 
 const variants: Record<Variant, string> = {
@@ -14,6 +14,7 @@ const variants: Record<Variant, string> = {
     "bg-white text-ink border border-[var(--line-strong)] hover:bg-[var(--bg-warm)]",
   ghost: "bg-transparent text-ink-soft hover:text-ink hover:bg-white/60",
   dark: "bg-ink text-white hover:bg-black",
+  danger: "bg-[var(--danger)] text-white hover:bg-[#a82f24]",
 };
 
 const sizes: Record<Size, string> = {

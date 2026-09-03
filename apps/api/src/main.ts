@@ -11,6 +11,8 @@ async function bootstrap() {
   app.enableCors({
     origin: (process.env.CORS_ORIGINS ?? "http://localhost:3000").split(","),
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "Range"],
+    exposedHeaders: ["Content-Disposition", "Content-Range", "Accept-Ranges", "Content-Length"],
   });
   app.useGlobalFilters(new HttpErrorFilter());
   app.useGlobalPipes(

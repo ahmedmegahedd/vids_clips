@@ -27,15 +27,28 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const pathname = request.nextUrl.pathname;
   const isProtected =
-    request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname.startsWith("/account");
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/account") ||
+    pathname.startsWith("/admin");
 
   if (isProtected && !user) {
     const redirect = request.nextUrl.clone();
     redirect.pathname = "/sign-in";
-    redirect.searchParams.set("next", request.nextUrl.pathname);
+    redirect.searchParams.set("next", pathname);
     return NextResponse.redirect(redirect);
+  }
+
+  if (pathname.startsWith("/admin") && user) {
+    const claimed = (user.app_metadata?.role ?? user.user_metadata?.role) as string | undefined;
+    const admin = claimed === "admin" || claimed === "super_admin" || user.email?.toLowerCase() === "admin@clipora.app";
+    if (!admin) {
+      const redirect = request.nextUrl.clone();
+      redirect.pathname = "/access-restricted";
+      redirect.search = "";
+      return NextResponse.redirect(redirect);
+    }
   }
 
   return response;

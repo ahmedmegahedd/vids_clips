@@ -161,12 +161,21 @@ export type ProcessingStage =
   | "failed";
 
 export const PROCESSING_STAGE_COPY: Record<ProcessingStage, string> = {
-  preparing: "Preparing your video",
-  splitting: "Splitting your video",
+  preparing: "Downloading your video",
+  splitting: "Preparing your clips",
   creating: "Creating your clips",
   finishing: "Finishing up",
   complete: "Your clips are ready!",
   failed: "We couldn't process this video",
+};
+
+export const PROCESSING_STAGE_HINT: Record<ProcessingStage, string> = {
+  preparing: "Longer videos can take a few minutes to download.",
+  splitting: "We're getting the file ready to split.",
+  creating: "We're splitting your video into individual clips.",
+  finishing: "Your clips are almost ready.",
+  complete: "Your clips are ready to download.",
+  failed: "Please make sure the video is available and that you have permission to use it.",
 };
 
 export interface VideoMeta {

@@ -23,7 +23,12 @@ export async function GET(request: Request) {
         },
       },
     );
-    await supabase.auth.exchangeCodeForSession(code);
+    const { data } = await supabase.auth.exchangeCodeForSession(code);
+    const email = data.user?.email?.toLowerCase();
+    const claimed = (data.user?.app_metadata?.role ?? data.user?.user_metadata?.role) as string | undefined;
+    const admin = claimed === "admin" || claimed === "super_admin" || email === "admin@clipora.app";
+    const destination = admin && (next === "/dashboard" || next === "/") ? "/admin" : next;
+    return NextResponse.redirect(`${origin}${destination}`);
   }
 
   return NextResponse.redirect(`${origin}${next}`);

@@ -2,17 +2,17 @@
 
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getCurrentUser, isAdmin, signOut, type SessionUser } from "@/lib/auth/session";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export function AppHeader({ billing = false }: { billing?: boolean }) {
-  const [email, setEmail] = useState<string | null>(null);
+  const router = useRouter();
+  const [user, setUser] = useState<SessionUser | null>(null);
 
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+    void getCurrentUser().then(setUser);
   }, []);
 
   return (
@@ -28,7 +28,24 @@ export function AppHeader({ billing = false }: { billing?: boolean }) {
         >
           Billing
         </Link>
-        {email && <span className="hidden truncate text-xs text-ink-faint md:inline">{email}</span>}
+        {isAdmin(user) && (
+          <Link href="/admin" className="text-sm font-medium text-ink-soft hover:text-ink">
+            Admin
+          </Link>
+        )}
+        {user?.email && <span className="hidden truncate text-xs text-ink-faint md:inline">{user.email}</span>}
+        {user && (
+          <button
+            type="button"
+            className="text-sm font-medium text-ink-soft hover:text-ink"
+            onClick={async () => {
+              await signOut();
+              router.replace("/sign-in");
+            }}
+          >
+            Sign Out
+          </button>
+        )}
         <Button href="/create?new=1" size="sm">
           + New Video
         </Button>

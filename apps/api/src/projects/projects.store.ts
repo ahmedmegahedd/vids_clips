@@ -11,6 +11,8 @@ import {
   type VideoMeta,
 } from "@clipora/shared";
 import { randomUUID } from "node:crypto";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { SupabaseService } from "../supabase/supabase.service";
 
 export interface CreateProjectInput {
@@ -55,11 +57,13 @@ export class ProjectsStore {
       if (error) throw error;
     } else {
       this.memory.set(project.id, { project, clips: [] });
+      this.persist(project.id);
     }
     return project;
   }
 
   async get(id: string, userId?: string): Promise<{ project: ProjectRecord; clips: ClipRecord[] } | null> {
+    if (!this.supabase.client) this.hydrate(id);
     if (this.supabase.client) {
       let query = this.supabase.client.from("projects").select("*").eq("id", id);
       if (userId && this.config.get("DEV_BYPASS_AUTH") !== "true") query = query.eq("user_id", userId);
@@ -88,6 +92,7 @@ export class ProjectsStore {
       if (error) throw error;
       return (data ?? []).map((row) => fromRow(row as Record<string, unknown>));
     }
+    this.hydrateAll();
     return [...this.memory.values()]
       .map((v) => v.project)
       .filter((p) => p.userId === userId)
@@ -111,6 +116,7 @@ export class ProjectsStore {
     const found = this.memory.get(id);
     if (found) {
       found.project = { ...found.project, ...patch, updatedAt };
+      this.persist(id);
     }
   }
 
@@ -122,7 +128,49 @@ export class ProjectsStore {
       }
     }
     const found = this.memory.get(projectId);
-    if (found) found.clips = clips;
+    if (found) {
+      found.clips = clips;
+      this.persist(projectId);
+    }
+  }
+
+  private storageRoot() {
+    return this.config.get<string>("CLIP_STORAGE_DIR") ?? join(__dirname, "..", "..", "tmp");
+  }
+
+  private snapshotPath(id: string) {
+    return join(this.storageRoot(), id, "project.json");
+  }
+
+  private persist(id: string) {
+    if (this.supabase.client) return;
+    const found = this.memory.get(id);
+    if (!found) return;
+    try {
+      mkdirSync(join(this.storageRoot(), id), { recursive: true });
+      writeFileSync(this.snapshotPath(id), JSON.stringify({ project: found.project, clips: found.clips }));
+    } catch {
+      /* keep serving from memory if disk is unavailable */
+    }
+  }
+
+  private hydrate(id: string) {
+    if (this.memory.has(id)) return;
+    try {
+      const parsed = JSON.parse(readFileSync(this.snapshotPath(id), "utf8")) as {
+        project: ProjectRecord;
+        clips: ClipRecord[];
+      };
+      if (parsed?.project?.id) this.memory.set(id, { project: parsed.project, clips: parsed.clips ?? [] });
+    } catch {
+      /* no snapshot */
+    }
+  }
+
+  private hydrateAll() {
+    const root = this.storageRoot();
+    if (!existsSync(root)) return;
+    for (const name of readdirSync(root)) this.hydrate(name);
   }
 }
 

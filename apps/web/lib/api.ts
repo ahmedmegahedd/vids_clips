@@ -122,4 +122,6 @@ export const api = {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     }),
   downloadAllUrl: (projectId: string) => `${API_URL}/projects/${projectId}/download-all`,
+  clipFileUrl: (projectId: string, clipId: string, download = false) =>
+    `${API_URL}/projects/${projectId}/clips/${clipId}/file${download ? "?download=1" : ""}`,
 };
